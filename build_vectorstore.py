@@ -1,31 +1,29 @@
 import os
+
+os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
+
 from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # --- 1. Define Paths ---
-TRANSCRIPT_FOLDER = './nptel_transcripts/' 
-VECTORSTORE_PATH = 'faiss_index_iot'
+TRANSCRIPT_FOLDER = "./nptel_transcripts/"
+VECTORSTORE_PATH = "faiss_index_iot"
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 # --- 2. Load Documents with Metadata ---
 print("Loading documents...")
 all_docs = []
-for filename in os.listdir(TRANSCRIPT_FOLDER):
+for filename in sorted(os.listdir(TRANSCRIPT_FOLDER)):
     if filename.endswith(".txt"):
         file_path = os.path.join(TRANSCRIPT_FOLDER, filename)
-        
-        # Load the document
-        loader = TextLoader(file_path)
-        doc = loader.load()[0] # TextLoader returns a list of one doc
-        
-        # *** THE IMPORTANT PART ***
-        # Clean up the filename to use as the source
-        # "W1_L1_Intro.txt" becomes "W1 L1 Intro"
+        loader = TextLoader(file_path, encoding="utf-8")
+        doc = loader.load()[0]
+
+        # "W1_L1_Intro.txt" -> "W1 L1 Intro"
         source_name = filename.replace(".txt", "").replace("_", " ")
-        doc.metadata["source"] = source_name 
-        
+        doc.metadata["source"] = source_name
         all_docs.append(doc)
 
 print(f"Loaded {len(all_docs)} documents.")
@@ -37,7 +35,8 @@ splits = text_splitter.split_documents(all_docs)
 
 # --- 4. Create Embeddings ---
 print("Loading embedding model...")
-embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME)
+os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
+embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME, model_kwargs={"token": False})
 
 # --- 5. Create and Save Vector Store ---
 print("Creating and saving vector store...")

@@ -1,8 +1,13 @@
 # Python
 venv/
+.venv/
 *.pyc
 __pycache__/
 
+# Secrets & Env
+.env
+.streamlit/secrets.toml
+
 # OS
 .DS_Store
-.env
+Thumbs.db
